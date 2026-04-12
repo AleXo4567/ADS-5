@@ -1,4 +1,4 @@
-// Copyright 2025 NNTU-CS
+//Copyright 2025 NNTU-CS
 #include <string>
 #include <map>
 #include <cctype>
