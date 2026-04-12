@@ -1,109 +1,125 @@
-//Copyright 2025 NNTU-CS
+// Copyright 2025 NNTU-CS
 #include <string>
 #include <map>
-#include <cctype>
 #include "tstack.h"
 
-int priority(char op) {
-    if (op == '(') return 0;
-    if (op == ')') return 1;
-    if (op == '+' || op == '-') return 2;
-    if (op == '*' || op == '/') return 3;
+int prior(char op) {
+    if (op == '(') {
+        return 0;
+    }
+    if (op == ')') {
+        return 1;
+    }
+    if (op == '+' || op == '-') {
+        return 2;
+    }
+    if (op == '*' || op == '/') {
+        return 3;
+    }
     return -1;
 }
 
-bool check_op(char c) {
-    return c == '+' || c == '-' || c == '*' || c == '/';
+bool is_oper(char c) {
+    return (c == '+' || c == '-' || c == '*' || c == '/');
 }
 
 std::string infx2pstfx(const std::string& inf) {
     TStack<char, 100> st;
-    std::string res;
-    int len = inf.size();
-    
-    for (int i = 0; i < len; i++) {
-        char sym = inf[i];
-        
-        if (sym == ' ') continue;
-        
-        if (sym >= '0' && sym <= '9') {
-            while (i < len && inf[i] >= '0' && inf[i] <= '9') {
-                res += inf[i];
-                i++;
+    std::string out;
+    int n = static_cast<int>(inf.length());
+
+    for (int i = 0; i < n; ++i) {
+        char ch = inf[i];
+
+        if (ch == ' ') {
+            continue;
+        }
+
+        if (ch >= '0' && ch <= '9') {
+            std::string num;
+            while (i < n && inf[i] >= '0' && inf[i] <= '9') {
+                num += inf[i];
+                ++i;
             }
-            res += ' ';
-            i--;
-        }
-        else if (sym == '(') {
-            st.push(sym);
-        }
-        else if (sym == ')') {
-            while (!st.empty() && st.get() != '(') {
-                res += st.get();
-                res += ' ';
+            out += num;
+            out += ' ';
+            --i;
+        } else if (ch == '(') {
+            st.push(ch);
+        } else if (ch == ')') {
+            while (!st.isEmpty() && st.top() != '(') {
+                out += st.top();
+                out += ' ';
                 st.pop();
             }
-            if (!st.empty() && st.get() == '(') {
+            if (!st.isEmpty() && st.top() == '(') {
                 st.pop();
             }
-        }
-        else if (check_op(sym)) {
-            while (!st.empty() && st.get() != '(' && 
-                   priority(st.get()) >= priority(sym)) {
-                res += st.get();
-                res += ' ';
+        } else if (is_oper(ch)) {
+            while (!st.isEmpty() && st.top() != '(' &&
+                   prior(st.top()) >= prior(ch)) {
+                out += st.top();
+                out += ' ';
                 st.pop();
             }
-            st.push(sym);
+            st.push(ch);
         }
     }
-    
-    while (!st.empty()) {
-        res += st.get();
-        res += ' ';
+
+    while (!st.isEmpty()) {
+        out += st.top();
+        out += ' ';
         st.pop();
     }
-    
-    if (res.size() > 0 && res[res.size() - 1] == ' ') {
-        res.erase(res.size() - 1);
+
+    if (!out.empty() && out.back() == ' ') {
+        out.pop_back();
     }
-    
-    return res;
+
+    return out;
 }
 
 int eval(const std::string& post) {
     TStack<int, 100> st;
-    int len = post.size();
-    
-    for (int i = 0; i < len; i++) {
+    int n = static_cast<int>(post.length());
+
+    for (int i = 0; i < n; ++i) {
         char c = post[i];
-        
-        if (c == ' ') continue;
-        
+
+        if (c == ' ') {
+            continue;
+        }
+
         if (c >= '0' && c <= '9') {
             int num = 0;
-            while (i < len && post[i] >= '0' && post[i] <= '9') {
+            while (i < n && post[i] >= '0' && post[i] <= '9') {
                 num = num * 10 + (post[i] - '0');
-                i++;
+                ++i;
             }
             st.push(num);
-            i--;
-        }
-        else if (check_op(c)) {
-            int b = st.get();
+            --i;
+        } else if (is_oper(c)) {
+            int b = st.top();
             st.pop();
-            int a = st.get();
+            int a = st.top();
             st.pop();
-            int ans = 0;
-            
-            if (c == '+') ans = a + b;
-            else if (c == '-') ans = a - b;
-            else if (c == '*') ans = a * b;
-            else if (c == '/') ans = a / b;
-            
-            st.push(ans);
+            int res = 0;
+
+            if (c == '+') {
+                res = a + b;
+            } else if (c == '-') {
+                res = a - b;
+            } else if (c == '*') {
+                res = a * b;
+            } else if (c == '/') {
+                res = a / b;
+            }
+
+            st.push(res);
         }
     }
-    
+
+    return st.top();
+}
     return st.get();
 }
