@@ -1,125 +1,123 @@
-// Copyright 2025 NNTU-CS
 #include <string>
 #include <map>
+#include <cctype>
 #include "tstack.h"
 
-int prior(char op) {
-    if (op == '(') {
-        return 0;
-    }
-    if (op == ')') {
-        return 1;
-    }
-    if (op == '+' || op == '-') {
-        return 2;
-    }
-    if (op == '*' || op == '/') {
-        return 3;
-    }
+int getOpPriority(char op) {
+    if (op == '(') return 0;
+    if (op == ')') return 1;
+    if (op == '+' || op == '-') return 2;
+    if (op == '*' || op == '/') return 3;
     return -1;
 }
 
-bool is_oper(char c) {
-    return (c == '+' || c == '-' || c == '*' || c == '/');
+bool checkIsOperator(char c) {
+    if (c == '+' || c == '-' || c == '*' || c == '/') {
+        return true;
+    }
+    return false;
 }
 
 std::string infx2pstfx(const std::string& inf) {
     TStack<char, 100> st;
-    std::string out;
-    int n = static_cast<int>(inf.length());
-
-    for (int i = 0; i < n; ++i) {
-        char ch = inf[i];
-
-        if (ch == ' ') {
+    std::string result = "";
+    
+    for (int i = 0; i < inf.length(); i++) {
+        char sym = inf[i];
+        
+        if (sym == ' ') {
             continue;
         }
-
-        if (ch >= '0' && ch <= '9') {
-            std::string num;
-            while (i < n && inf[i] >= '0' && inf[i] <= '9') {
-                num += inf[i];
-                ++i;
+        
+        if (sym >= '0' && sym <= '9') {
+            while (i < inf.length() && inf[i] >= '0' && inf[i] <= '9') {
+                result = result + inf[i];
+                i++;
             }
-            out += num;
-            out += ' ';
-            --i;
-        } else if (ch == '(') {
-            st.push(ch);
-        } else if (ch == ')') {
-            while (!st.isEmpty() && st.top() != '(') {
-                out += st.top();
-                out += ' ';
+            result = result + ' ';
+            i--;
+        }
+        else if (sym == '(') {
+            st.push(sym);
+        }
+        else if (sym == ')') {
+            while (!st.empty() && st.get() != '(') {
+                result = result + st.get();
+                result = result + ' ';
                 st.pop();
             }
-            if (!st.isEmpty() && st.top() == '(') {
+            if (!st.empty() && st.get() == '(') {
                 st.pop();
             }
-        } else if (is_oper(ch)) {
-            while (!st.isEmpty() && st.top() != '(' &&
-                   prior(st.top()) >= prior(ch)) {
-                out += st.top();
-                out += ' ';
+        }
+        else if (checkIsOperator(sym)) {
+            while (!st.empty() && st.get() != '(' && 
+                   getOpPriority(st.get()) >= getOpPriority(sym)) {
+                result = result + st.get();
+                result = result + ' ';
                 st.pop();
             }
-            st.push(ch);
+            st.push(sym);
         }
     }
-
-    while (!st.isEmpty()) {
-        out += st.top();
-        out += ' ';
+    
+    while (!st.empty()) {
+        result = result + st.get();
+        result = result + ' ';
         st.pop();
     }
-
-    if (!out.empty() && out.back() == ' ') {
-        out.pop_back();
+    
+    if (result.length() > 0 && result[result.length() - 1] == ' ') {
+        result = result.substr(0, result.length() - 1);
     }
-
-    return out;
+    
+    return result;
 }
 
 int eval(const std::string& post) {
     TStack<int, 100> st;
-    int n = static_cast<int>(post.length());
-
-    for (int i = 0; i < n; ++i) {
-        char c = post[i];
-
-        if (c == ' ') {
+    
+    for (int i = 0; i < post.length(); i++) {
+        char ch = post[i];
+        
+        if (ch == ' ') {
             continue;
         }
-
-        if (c >= '0' && c <= '9') {
-            int num = 0;
-            while (i < n && post[i] >= '0' && post[i] <= '9') {
-                num = num * 10 + (post[i] - '0');
-                ++i;
+        
+        if (ch >= '0' && ch <= '9') {
+            std::string num = "";
+            while (i < post.length() && post[i] >= '0' && post[i] <= '9') {
+                num = num + post[i];
+                i++;
             }
-            st.push(num);
-            --i;
-        } else if (is_oper(c)) {
-            int b = st.top();
+            
+            int number = 0;
+            for (int j = 0; j < num.length(); j++) {
+                number = number * 10 + (num[j] - '0');
+            }
+            st.push(number);
+            i--;
+        }
+        else if (checkIsOperator(ch)) {
+            int b = st.get();
             st.pop();
-            int a = st.top();
+            int a = st.get();
             st.pop();
+            
             int res = 0;
-
-            if (c == '+') {
+            if (ch == '+') {
                 res = a + b;
-            } else if (c == '-') {
+            } else if (ch == '-') {
                 res = a - b;
-            } else if (c == '*') {
+            } else if (ch == '*') {
                 res = a * b;
-            } else if (c == '/') {
+            } else if (ch == '/') {
                 res = a / b;
             }
-
+            
             st.push(res);
         }
     }
-
-    return st.top();
-}
+    
     return st.get();
 }
