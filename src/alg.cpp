@@ -1,123 +1,99 @@
+// Copyright 2025 NNTU-CS
 #include <string>
 #include <map>
-#include <cctype>
 #include "tstack.h"
 
-int getOpPriority(char op) {
-    if (op == '(') return 0;
-    if (op == ')') return 1;
-    if (op == '+' || op == '-') return 2;
-    if (op == '*' || op == '/') return 3;
-    return -1;
-}
-
-bool checkIsOperator(char c) {
-    if (c == '+' || c == '-' || c == '*' || c == '/') {
-        return true;
-    }
-    return false;
-}
-
 std::string infx2pstfx(const std::string& inf) {
-    TStack<char, 100> st;
-    std::string result = "";
-    
-    for (int i = 0; i < inf.length(); i++) {
-        char sym = inf[i];
-        
-        if (sym == ' ') {
-            continue;
-        }
-        
-        if (sym >= '0' && sym <= '9') {
-            while (i < inf.length() && inf[i] >= '0' && inf[i] <= '9') {
-                result = result + inf[i];
-                i++;
-            }
-            result = result + ' ';
-            i--;
-        }
-        else if (sym == '(') {
-            st.push(sym);
-        }
-        else if (sym == ')') {
-            while (!st.empty() && st.get() != '(') {
-                result = result + st.get();
-                result = result + ' ';
-                st.pop();
-            }
-            if (!st.empty() && st.get() == '(') {
-                st.pop();
-            }
-        }
-        else if (checkIsOperator(sym)) {
-            while (!st.empty() && st.get() != '(' && 
-                   getOpPriority(st.get()) >= getOpPriority(sym)) {
-                result = result + st.get();
-                result = result + ' ';
-                st.pop();
-            }
-            st.push(sym);
-        }
+  TStack<char, 100> stackOp;
+  std::string result;
+
+  std::map<char, int> priority = {
+    {'+', 1},
+    {'-', 1},
+    {'*', 2},
+    {'/', 2}
+  };
+
+  for (size_t idx = 0; idx < inf.size(); ++idx) {
+    char symbol = inf[idx];
+
+    if (symbol >= '0' && symbol <= '9') {
+      result += symbol;
+      while (idx + 1 < inf.size() && inf[idx + 1] >= '0' && inf[idx + 1] <= '9') {
+        ++idx;
+        result += inf[idx];
+      }
+      result += ' ';
+    } else if (symbol == '(') {
+      stackOp.push(symbol);
+    } else if (symbol == ')') {
+      while (!stackOp.isempty() && stackOp.get() != '(') {
+        result += stackOp.get();
+        result += ' ';
+        stackOp.pop();
+      }
+      if (!stackOp.isempty()) {
+        stackOp.pop();
+      }
+    } else if (priority.find(symbol) != priority.end()) {
+      while (!stackOp.isempty() && stackOp.get() != '(' && priority[stackOp.get()] >= priority[symbol]) {
+        result += stackOp.get();
+        result += ' ';
+        stackOp.pop();
+      }
+      stackOp.push(symbol);
     }
-    
-    while (!st.empty()) {
-        result = result + st.get();
-        result = result + ' ';
-        st.pop();
+  }
+
+  while (!stackOp.isempty()) {
+    if (stackOp.get() != '(') {
+      result += stackOp.get();
+      result += ' ';
     }
-    
-    if (result.length() > 0 && result[result.length() - 1] == ' ') {
-        result = result.substr(0, result.length() - 1);
-    }
-    
-    return result;
+    stackOp.pop();
+  }
+
+  if (!result.empty()) {
+    result.pop_back();
+  }
+
+  return result;
 }
 
-int eval(const std::string& post) {
-    TStack<int, 100> st;
-    
-    for (int i = 0; i < post.length(); i++) {
-        char ch = post[i];
-        
-        if (ch == ' ') {
-            continue;
-        }
-        
-        if (ch >= '0' && ch <= '9') {
-            std::string num = "";
-            while (i < post.length() && post[i] >= '0' && post[i] <= '9') {
-                num = num + post[i];
-                i++;
-            }
-            
-            int number = 0;
-            for (int j = 0; j < num.length(); j++) {
-                number = number * 10 + (num[j] - '0');
-            }
-            st.push(number);
-            i--;
-        }
-        else if (checkIsOperator(ch)) {
-            int b = st.get();
-            st.pop();
-            int a = st.get();
-            st.pop();
-            
-            int res = 0;
-            if (ch == '+') {
-                res = a + b;
-            } else if (ch == '-') {
-                res = a - b;
-            } else if (ch == '*') {
-                res = a * b;
-            } else if (ch == '/') {
-                res = a / b;
-            }
-            
-            st.push(res);
-        }
+int eval(const std::string& pref) {
+  TStack<int, 100> calcStack;
+
+  for (size_t pos = 0; pos < pref.size(); ++pos) {
+    char cur = pref[pos];
+
+    if (cur == ' ') {
+      continue;
     }
-    
-    return st.get();
+
+    if (cur >= '0' && cur <= '9') {
+      int value = cur - '0';
+      while (pos + 1 < pref.size() && pref[pos + 1] >= '0' && pref[pos + 1] <= '9') {
+        ++pos;
+        value = value * 10 + (pref[pos] - '0');
+      }
+      calcStack.push(value);
+    } else {
+      int rightOp = calcStack.get();
+      calcStack.pop();
+      int leftOp = calcStack.get();
+      calcStack.pop();
+
+      int answer = 0;
+      switch (cur) {
+        case '+': answer = leftOp + rightOp; break;
+        case '-': answer = leftOp - rightOp; break;
+        case '*': answer = leftOp * rightOp; break;
+        case '/': answer = leftOp / rightOp; break;
+      }
+
+      calcStack.push(answer);
+    }
+  }
+
+  return calcStack.get();
 }
