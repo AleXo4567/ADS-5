@@ -4,96 +4,103 @@
 #include "tstack.h"
 
 std::string infx2pstfx(const std::string& inf) {
-  TStack<char, 100> stackOp;
-  std::string result;
+  TStack<char, 100> opStack;
+  std::string postfix;
 
-  std::map<char, int> priority = {
+  std::map<char, int> prec = {
     {'+', 1},
     {'-', 1},
     {'*', 2},
     {'/', 2}
   };
 
-  for (size_t idx = 0; idx < inf.size(); ++idx) {
-    char symbol = inf[idx];
+  for (size_t j = 0; j < inf.size(); ++j) {
+    char ch = inf[j];
 
-    if (symbol >= '0' && symbol <= '9') {
-      result += symbol;
-      while (idx + 1 < inf.size() && inf[idx + 1] >= '0' && inf[idx + 1] <= '9') {
-        ++idx;
-        result += inf[idx];
+    if (ch >= '0' && ch <= '9') {
+      postfix += ch;
+      while (j + 1 < inf.size() && inf[j + 1] >= '0' && inf[j + 1] <= '9') {
+        ++j;
+        postfix += inf[j];
       }
-      result += ' ';
-    } else if (symbol == '(') {
-      stackOp.push(symbol);
-    } else if (symbol == ')') {
-      while (!stackOp.isempty() && stackOp.get() != '(') {
-        result += stackOp.get();
-        result += ' ';
-        stackOp.pop();
+      postfix += ' ';
+    } 
+    else if (ch == '(') {
+      opStack.push(ch);
+    } 
+    else if (ch == ')') {
+      while (!opStack.isempty() && opStack.get() != '(') {
+        postfix += opStack.get();
+        postfix += ' ';
+        opStack.pop();
       }
-      if (!stackOp.isempty()) {
-        stackOp.pop();
+      if (!opStack.isempty()) {
+        opStack.pop();
       }
-    } else if (priority.find(symbol) != priority.end()) {
-      while (!stackOp.isempty() && stackOp.get() != '(' && priority[stackOp.get()] >= priority[symbol]) {
-        result += stackOp.get();
-        result += ' ';
-        stackOp.pop();
+    } 
+    else if (prec.find(ch) != prec.end()) {
+      while (!opStack.isempty() && opStack.get() != '(' && prec[opStack.get()] >= prec[ch]) {
+        postfix += opStack.get();
+        postfix += ' ';
+        opStack.pop();
       }
-      stackOp.push(symbol);
+      opStack.push(ch);
     }
   }
 
-  while (!stackOp.isempty()) {
-    if (stackOp.get() != '(') {
-      result += stackOp.get();
-      result += ' ';
+  while (!opStack.isempty()) {
+    if (opStack.get() != '(') {
+      postfix += opStack.get();
+      postfix += ' ';
     }
-    stackOp.pop();
+    opStack.pop();
   }
 
-  if (!result.empty()) {
-    result.pop_back();
+  if (!postfix.empty()) {
+    postfix.pop_back();
   }
 
-  return result;
+  return postfix;
 }
 
-int eval(const std::string& pref) {
-  TStack<int, 100> calcStack;
+int eval(const std::string& prefix) {
+  TStack<int, 100> st;
 
-  for (size_t pos = 0; pos < pref.size(); ++pos) {
-    char cur = pref[pos];
+  for (size_t pos = 0; pos < prefix.size(); ++pos) {
+    char cur = prefix[pos];
 
     if (cur == ' ') {
       continue;
     }
 
     if (cur >= '0' && cur <= '9') {
-      int value = cur - '0';
-      while (pos + 1 < pref.size() && pref[pos + 1] >= '0' && pref[pos + 1] <= '9') {
+      int val = cur - '0';
+      while (pos + 1 < prefix.size() && prefix[pos + 1] >= '0' && prefix[pos + 1] <= '9') {
         ++pos;
-        value = value * 10 + (pref[pos] - '0');
+        val = val * 10 + (prefix[pos] - '0');
       }
-      calcStack.push(value);
-    } else {
-      int rightOp = calcStack.get();
-      calcStack.pop();
-      int leftOp = calcStack.get();
-      calcStack.pop();
+      st.push(val);
+    } 
+    else {
+      int right = st.get();
+      st.pop();
+      int left = st.get();
+      st.pop();
 
-      int answer = 0;
-      switch (cur) {
-        case '+': answer = leftOp + rightOp; break;
-        case '-': answer = leftOp - rightOp; break;
-        case '*': answer = leftOp * rightOp; break;
-        case '/': answer = leftOp / rightOp; break;
+      int result;
+      if (cur == '+') {
+        result = left + right;
+      } else if (cur == '-') {
+        result = left - right;
+      } else if (cur == '*') {
+        result = left * right;
+      } else {
+        result = left / right;
       }
 
-      calcStack.push(answer);
+      st.push(result);
     }
   }
 
-  return calcStack.get();
+  return st.get();
 }
